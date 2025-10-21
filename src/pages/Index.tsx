@@ -241,8 +241,33 @@ const Index = () => {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'processing' | 'success'>('pending');
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [roomArea, setRoomArea] = useState<string>('');
+  const [roomHeight, setRoomHeight] = useState<string>('2.7');
+  const [sunExposure, setSunExposure] = useState<'low' | 'medium' | 'high'>('medium');
+  const [peopleCount, setPeopleCount] = useState<string>('2');
+  const [recommendedBTU, setRecommendedBTU] = useState<number | null>(null);
 
   const categories = ['all', 'Видеонаблюдение', 'Охранные системы', 'Контроль доступа', 'Кондиционеры'];
+  
+  const calculateBTU = () => {
+    if (!roomArea || parseFloat(roomArea) <= 0) return;
+    
+    const area = parseFloat(roomArea);
+    const height = parseFloat(roomHeight);
+    const people = parseInt(peopleCount) || 0;
+    
+    let baseCoefficient = 40;
+    if (sunExposure === 'low') baseCoefficient = 35;
+    if (sunExposure === 'high') baseCoefficient = 45;
+    
+    let requiredWatts = area * baseCoefficient;
+    requiredWatts += people * 100;
+    
+    const btuValue = Math.round((requiredWatts / 293.1) * 1000);
+    setRecommendedBTU(btuValue);
+  };
+  
   const filteredProducts = selectedCategory === 'all' 
     ? products 
     : products.filter(p => p.category === selectedCategory);
@@ -489,17 +514,33 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="flex flex-wrap justify-center gap-3 mb-12">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
-                  onClick={() => setSelectedCategory(category)}
-                  className="capitalize"
-                >
-                  {category === 'all' ? 'Все товары' : category}
-                </Button>
-              ))}
+            <div className="space-y-4 mb-12">
+              <div className="flex flex-wrap justify-center gap-3">
+                {categories.map((category) => (
+                  <Button
+                    key={category}
+                    variant={selectedCategory === category ? 'default' : 'outline'}
+                    onClick={() => setSelectedCategory(category)}
+                    className="capitalize"
+                  >
+                    {category === 'all' ? 'Все товары' : category}
+                  </Button>
+                ))}
+              </div>
+              
+              {selectedCategory === 'Кондиционеры' && (
+                <div className="flex justify-center">
+                  <Button 
+                    variant="secondary" 
+                    size="lg"
+                    onClick={() => setIsCalculatorOpen(true)}
+                    className="gap-2"
+                  >
+                    <Icon name="Calculator" size={18} />
+                    Калькулятор подбора кондиционера
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -1262,6 +1303,201 @@ const Index = () => {
                     Вернуться в корзину
                   </Button>
                 </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Калькулятор подбора кондиционера</DialogTitle>
+            <DialogDescription>
+              Ответьте на несколько вопросов, и мы подберем подходящий кондиционер для вашего помещения
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Площадь помещения (м²)</label>
+                <Input 
+                  type="number" 
+                  placeholder="Например: 25"
+                  value={roomArea}
+                  onChange={(e) => setRoomArea(e.target.value)}
+                  min="1"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Высота потолков (м)</label>
+                <Input 
+                  type="number" 
+                  placeholder="Например: 2.7"
+                  value={roomHeight}
+                  onChange={(e) => setRoomHeight(e.target.value)}
+                  step="0.1"
+                  min="2"
+                  max="5"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Количество людей</label>
+                <Input 
+                  type="number" 
+                  placeholder="Например: 2"
+                  value={peopleCount}
+                  onChange={(e) => setPeopleCount(e.target.value)}
+                  min="0"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Солнечная сторона</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button 
+                    variant={sunExposure === 'low' ? 'default' : 'outline'}
+                    onClick={() => setSunExposure('low')}
+                    className="text-xs"
+                  >
+                    Север
+                  </Button>
+                  <Button 
+                    variant={sunExposure === 'medium' ? 'default' : 'outline'}
+                    onClick={() => setSunExposure('medium')}
+                    className="text-xs"
+                  >
+                    Восток/Запад
+                  </Button>
+                  <Button 
+                    variant={sunExposure === 'high' ? 'default' : 'outline'}
+                    onClick={() => setSunExposure('high')}
+                    className="text-xs"
+                  >
+                    Юг
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <Card className="bg-muted/30 border-none">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <Icon name="Info" size={20} className="text-primary flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p><strong>Как правильно выбрать:</strong></p>
+                    <ul className="space-y-1 ml-4">
+                      <li>• Для спален выбирайте модели с низким уровнем шума (до 22 дБ)</li>
+                      <li>• Для офисов подойдут кассетные или канальные модели</li>
+                      <li>• Инверторные модели экономят до 40% электроэнергии</li>
+                      <li>• Учитывайте высоту потолков — чем выше, тем мощнее нужен кондиционер</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={calculateBTU}
+              disabled={!roomArea || parseFloat(roomArea) <= 0}
+            >
+              <Icon name="Calculator" size={18} className="mr-2" />
+              Рассчитать мощность
+            </Button>
+
+            {recommendedBTU && (
+              <div className="space-y-4">
+                <Card className="border-2 border-primary bg-primary/5">
+                  <CardContent className="pt-6 text-center space-y-3">
+                    <div className="flex items-center justify-center gap-2">
+                      <Icon name="Zap" size={24} className="text-primary" />
+                      <h3 className="text-xl font-bold">Рекомендуемая мощность</h3>
+                    </div>
+                    <p className="text-4xl font-bold text-primary">{recommendedBTU.toLocaleString()} BTU</p>
+                    <p className="text-sm text-muted-foreground">
+                      ≈ {(recommendedBTU / 3412).toFixed(1)} кВт
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">Подходящие модели из каталога:</p>
+                  <div className="space-y-2">
+                    {products
+                      .filter(p => p.category === 'Кондиционеры')
+                      .filter(p => {
+                        const match = p.name.match(/(\d+)000\s*BTU/);
+                        if (!match) return false;
+                        const btu = parseInt(match[1]) * 1000;
+                        return btu >= recommendedBTU * 0.8 && btu <= recommendedBTU * 1.2;
+                      })
+                      .map(product => (
+                        <Card key={product.id} className="cursor-pointer hover:border-primary transition-colors" onClick={() => {
+                          setIsCalculatorOpen(false);
+                          setSelectedCategory('Кондиционеры');
+                          openProductDialog(product);
+                        }}>
+                          <CardContent className="p-4 flex items-center gap-4">
+                            <img 
+                              src={product.image} 
+                              alt={product.name}
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-sm truncate">{product.name}</h4>
+                              <p className="text-xs text-muted-foreground">{product.description}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-primary">{product.price.toLocaleString()} ₽</p>
+                              <Button size="sm" className="mt-1" onClick={(e) => {
+                                e.stopPropagation();
+                                addToCart(product);
+                                setIsCalculatorOpen(false);
+                              }}>
+                                В заявку
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                  
+                  {products.filter(p => p.category === 'Кондиционеры').filter(p => {
+                    const match = p.name.match(/(\d+)000\s*BTU/);
+                    if (!match) return false;
+                    const btu = parseInt(match[1]) * 1000;
+                    return btu >= recommendedBTU * 0.8 && btu <= recommendedBTU * 1.2;
+                  }).length === 0 && (
+                    <Card className="bg-yellow-50 border-yellow-200">
+                      <CardContent className="p-4 flex items-start gap-3">
+                        <Icon name="AlertCircle" size={20} className="text-yellow-600 flex-shrink-0" />
+                        <div className="text-sm">
+                          <p className="font-medium text-yellow-900">Подходящая модель не найдена</p>
+                          <p className="text-yellow-800">Свяжитесь с нами для индивидуального подбора оборудования</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    setRecommendedBTU(null);
+                    setRoomArea('');
+                    setPeopleCount('2');
+                    setRoomHeight('2.7');
+                    setSunExposure('medium');
+                  }}
+                >
+                  Рассчитать заново
+                </Button>
               </div>
             )}
           </div>
