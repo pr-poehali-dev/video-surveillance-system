@@ -3,10 +3,91 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
+
+interface Product {
+  id: number;
+  name: string;
+  category: string;
+  price: number;
+  image: string;
+  description: string;
+  features: string[];
+  inStock: boolean;
+}
+
+const products: Product[] = [
+  {
+    id: 1,
+    name: 'IP-камера купольная 4MP',
+    category: 'Видеонаблюдение',
+    price: 12500,
+    image: 'https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/be591974-619d-4917-962c-ca355f18fbc3.jpg',
+    description: 'Купольная IP-камера с разрешением 4 Мп для внутреннего наблюдения',
+    features: ['4 Мп разрешение', 'ИК подсветка 30м', 'H.265+', 'PoE', 'Micro SD до 256 ГБ'],
+    inStock: true
+  },
+  {
+    id: 2,
+    name: 'IP-камера уличная 5MP',
+    category: 'Видеонаблюдение',
+    price: 15900,
+    image: 'https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/e72a27a9-2ffd-4bba-82f6-4c530fd54d0f.jpg',
+    description: 'Уличная IP-камера с защитой IP67 и ночным видением',
+    features: ['5 Мп разрешение', 'ИК подсветка 50м', 'IP67', 'WDR 120дБ', 'Моторизованный объектив'],
+    inStock: true
+  },
+  {
+    id: 3,
+    name: 'Видеорегистратор NVR 16 каналов',
+    category: 'Видеонаблюдение',
+    price: 28500,
+    image: 'https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/00f93d2e-b987-49f8-b67d-26de9b801a5b.jpg',
+    description: 'Сетевой видеорегистратор на 16 каналов с поддержкой 4K',
+    features: ['16 каналов', 'Запись до 8K', 'HDD до 8 ТБ', 'HDMI 4K', 'P2P доступ'],
+    inStock: true
+  },
+  {
+    id: 4,
+    name: 'Панель управления охранная',
+    category: 'Охранные системы',
+    price: 19900,
+    image: 'https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/fac51a00-1a29-44f5-a50c-85d204887143.jpg',
+    description: 'Беспроводная панель управления с GSM модулем',
+    features: ['32 зоны', 'GSM/GPRS', 'Мобильное приложение', 'SMS оповещения', '2 года автономии'],
+    inStock: true
+  },
+  {
+    id: 5,
+    name: 'Датчик движения PIR',
+    category: 'Охранные системы',
+    price: 2500,
+    image: 'https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/c8f61573-9f26-4403-9d59-328e7f472f78.jpg',
+    description: 'Беспроводной PIR датчик с защитой от животных',
+    features: ['Радиус 12м', 'Угол 90°', 'Защита от животных', 'Батарея 3 года', 'Температура -10..+55°C'],
+    inStock: true
+  },
+  {
+    id: 6,
+    name: 'Считыватель RFID',
+    category: 'Контроль доступа',
+    price: 8900,
+    image: 'https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/c8f61573-9f26-4403-9d59-328e7f472f78.jpg',
+    description: 'Считыватель карт доступа с клавиатурой',
+    features: ['RFID 125кГц', 'PIN-код', 'IP65', 'Wiegand 26/34', 'LED индикация'],
+    inStock: false
+  }
+];
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  const categories = ['all', 'Видеонаблюдение', 'Охранные системы', 'Контроль доступа'];
+  const filteredProducts = selectedCategory === 'all' 
+    ? products 
+    : products.filter(p => p.category === selectedCategory);
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -132,63 +213,77 @@ const Index = () => {
                 Широкий ассортимент систем безопасности для объектов любой сложности
               </p>
             </div>
+            
+            <div className="flex flex-wrap justify-center gap-3 mb-12">
+              {categories.map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? 'default' : 'outline'}
+                  onClick={() => setSelectedCategory(category)}
+                  className="capitalize"
+                >
+                  {category === 'all' ? 'Все товары' : category}
+                </Button>
+              ))}
+            </div>
+
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <Card className="overflow-hidden hover-scale transition-all group">
-                <div className="h-64 overflow-hidden">
-                  <img 
-                    src="https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/d145309d-ce74-44af-ab63-a85209489484.jpg"
-                    alt="Системы видеонаблюдения"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardContent className="p-6 space-y-3">
-                  <h3 className="text-xl font-semibold">Видеонаблюдение</h3>
-                  <p className="text-muted-foreground">
-                    IP и аналоговые камеры, видеорегистраторы, системы хранения данных
-                  </p>
-                  <Button variant="outline" className="w-full">
-                    Подробнее
-                  </Button>
-                </CardContent>
-              </Card>
+              {filteredProducts.map((product) => (
+                <Card key={product.id} className="overflow-hidden hover-scale transition-all group flex flex-col">
+                  <div className="h-64 overflow-hidden relative">
+                    <img 
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {!product.inStock && (
+                      <Badge variant="destructive" className="absolute top-3 right-3">
+                        Под заказ
+                      </Badge>
+                    )}
+                  </div>
+                  <CardContent className="p-6 space-y-4 flex-1 flex flex-col">
+                    <div className="space-y-2">
+                      <Badge variant="outline" className="text-xs">
+                        {product.category}
+                      </Badge>
+                      <h3 className="text-xl font-semibold">{product.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {product.description}
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Характеристики:</p>
+                      <ul className="space-y-1">
+                        {product.features.slice(0, 3).map((feature, idx) => (
+                          <li key={idx} className="flex items-center gap-2 text-sm">
+                            <Icon name="Check" size={14} className="text-primary flex-shrink-0" />
+                            <span className="text-muted-foreground">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
 
-              <Card className="overflow-hidden hover-scale transition-all group">
-                <div className="h-64 overflow-hidden">
-                  <img 
-                    src="https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/fac51a00-1a29-44f5-a50c-85d204887143.jpg"
-                    alt="Охранные системы"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardContent className="p-6 space-y-3">
-                  <h3 className="text-xl font-semibold">Охранные сигнализации</h3>
-                  <p className="text-muted-foreground">
-                    Беспроводные и проводные системы, панели управления, датчики движения
-                  </p>
-                  <Button variant="outline" className="w-full">
-                    Подробнее
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden hover-scale transition-all group">
-                <div className="h-64 overflow-hidden">
-                  <img 
-                    src="https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/c8f61573-9f26-4403-9d59-328e7f472f78.jpg"
-                    alt="Контроль доступа"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardContent className="p-6 space-y-3">
-                  <h3 className="text-xl font-semibold">Контроль доступа</h3>
-                  <p className="text-muted-foreground">
-                    СКУД, биометрические системы, электронные замки и считыватели
-                  </p>
-                  <Button variant="outline" className="w-full">
-                    Подробнее
-                  </Button>
-                </CardContent>
-              </Card>
+                    <div className="mt-auto pt-4 border-t space-y-3">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-2xl font-bold text-primary">
+                          {product.price.toLocaleString('ru-RU')} ₽
+                        </span>
+                        <span className="text-xs text-muted-foreground">за единицу</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button className="flex-1">
+                          Заказать
+                        </Button>
+                        <Button variant="outline" size="icon">
+                          <Icon name="Info" size={18} />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
