@@ -4,6 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Icon from '@/components/ui/icon';
 
 interface Product {
@@ -15,6 +18,10 @@ interface Product {
   description: string;
   features: string[];
   inStock: boolean;
+  fullDescription?: string;
+  specifications?: { [key: string]: string };
+  warranty?: string;
+  delivery?: string;
 }
 
 const products: Product[] = [
@@ -26,7 +33,20 @@ const products: Product[] = [
     image: 'https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/be591974-619d-4917-962c-ca355f18fbc3.jpg',
     description: 'Купольная IP-камера с разрешением 4 Мп для внутреннего наблюдения',
     features: ['4 Мп разрешение', 'ИК подсветка 30м', 'H.265+', 'PoE', 'Micro SD до 256 ГБ'],
-    inStock: true
+    inStock: true,
+    fullDescription: 'Профессиональная купольная IP-камера с разрешением 4 Мегапикселя обеспечивает высокое качество изображения для систем видеонаблюдения внутри помещений. Поддержка стандарта H.265+ позволяет экономить до 50% дискового пространства при сохранении качества видео. Встроенная ИК подсветка обеспечивает видимость до 30 метров в полной темноте.',
+    specifications: {
+      'Матрица': '1/3" Progressive Scan CMOS',
+      'Разрешение': '2688×1520 (4 Мп)',
+      'Объектив': '2.8мм фиксированный',
+      'ИК подсветка': 'До 30м',
+      'Сжатие': 'H.265+/H.265/H.264+/H.264',
+      'Питание': 'PoE (802.3af), DC12В',
+      'Рабочая температура': '-10°C ~ +60°C',
+      'Защита': 'IP67'
+    },
+    warranty: '3 года официальной гарантии',
+    delivery: 'Доставка по Москве — 1 день, по России — 3-5 дней'
   },
   {
     id: 2,
@@ -36,7 +56,20 @@ const products: Product[] = [
     image: 'https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/e72a27a9-2ffd-4bba-82f6-4c530fd54d0f.jpg',
     description: 'Уличная IP-камера с защитой IP67 и ночным видением',
     features: ['5 Мп разрешение', 'ИК подсветка 50м', 'IP67', 'WDR 120дБ', 'Моторизованный объектив'],
-    inStock: true
+    inStock: true,
+    fullDescription: 'Всепогодная уличная IP-камера с высоким разрешением 5 Мп предназначена для круглосуточного наблюдения на открытых территориях. Моторизованный варифокальный объектив позволяет удаленно настраивать угол обзора. Технология WDR 120дБ обеспечивает четкое изображение в условиях контрастного освещения.',
+    specifications: {
+      'Матрица': '1/2.7" Progressive Scan CMOS',
+      'Разрешение': '2560×1944 (5 Мп)',
+      'Объектив': '2.8-12мм моторизованный',
+      'ИК подсветка': 'До 50м',
+      'WDR': '120дБ',
+      'Питание': 'PoE (802.3af), DC12В',
+      'Рабочая температура': '-40°C ~ +60°C',
+      'Защита': 'IP67, IK10'
+    },
+    warranty: '3 года официальной гарантии',
+    delivery: 'Доставка по Москве — 1 день, по России — 3-5 дней'
   },
   {
     id: 3,
@@ -46,7 +79,20 @@ const products: Product[] = [
     image: 'https://cdn.poehali.dev/projects/efe24ef9-f9e4-40ab-88ec-1ddb60c55c42/files/00f93d2e-b987-49f8-b67d-26de9b801a5b.jpg',
     description: 'Сетевой видеорегистратор на 16 каналов с поддержкой 4K',
     features: ['16 каналов', 'Запись до 8K', 'HDD до 8 ТБ', 'HDMI 4K', 'P2P доступ'],
-    inStock: true
+    inStock: true,
+    fullDescription: 'Профессиональный сетевой видеорегистратор для построения систем IP-видеонаблюдения до 16 камер. Поддержка записи в сверхвысоком разрешении до 8K, встроенная технология интеллектуальной видеоаналитики. Удаленный доступ через мобильное приложение и веб-интерфейс.',
+    specifications: {
+      'Каналов видео': '16 IP-камер',
+      'Разрешение записи': 'До 8 Мп на канал',
+      'Входящая скорость': 'До 160 Мбит/с',
+      'Жесткие диски': 'До 2×8 ТБ SATA',
+      'Видеовыходы': 'HDMI 4K, VGA',
+      'Сеть': 'RJ45 10/100/1000 Мбит/с',
+      'PoE': 'Нет (требуется внешний коммутатор)',
+      'Питание': 'DC12В/4А'
+    },
+    warranty: '2 года официальной гарантии',
+    delivery: 'Доставка по Москве — 1 день, по России — 3-5 дней'
   },
   {
     id: 4,
@@ -83,11 +129,18 @@ const products: Product[] = [
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const categories = ['all', 'Видеонаблюдение', 'Охранные системы', 'Контроль доступа'];
   const filteredProducts = selectedCategory === 'all' 
     ? products 
     : products.filter(p => p.category === selectedCategory);
+
+  const openProductDialog = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDialogOpen(true);
+  };
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -276,7 +329,11 @@ const Index = () => {
                         <Button className="flex-1">
                           Заказать
                         </Button>
-                        <Button variant="outline" size="icon">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={() => openProductDialog(product)}
+                        >
                           <Icon name="Info" size={18} />
                         </Button>
                       </div>
@@ -454,6 +511,152 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {selectedProduct && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <DialogTitle className="text-2xl mb-2">{selectedProduct.name}</DialogTitle>
+                    <DialogDescription>
+                      <Badge variant="outline">{selectedProduct.category}</Badge>
+                    </DialogDescription>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-primary">
+                      {selectedProduct.price.toLocaleString('ru-RU')} ₽
+                    </div>
+                    <div className="text-sm text-muted-foreground">за единицу</div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-6">
+                <div className="rounded-lg overflow-hidden">
+                  <img 
+                    src={selectedProduct.image} 
+                    alt={selectedProduct.name}
+                    className="w-full h-80 object-cover"
+                  />
+                </div>
+
+                <Tabs defaultValue="description" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="description">Описание</TabsTrigger>
+                    <TabsTrigger value="specs">Характеристики</TabsTrigger>
+                    <TabsTrigger value="delivery">Доставка</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="description" className="space-y-4 mt-4">
+                    <div>
+                      <h4 className="font-semibold mb-2">О товаре</h4>
+                      <p className="text-muted-foreground leading-relaxed">
+                        {selectedProduct.fullDescription || selectedProduct.description}
+                      </p>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div>
+                      <h4 className="font-semibold mb-3">Основные возможности</h4>
+                      <div className="grid gap-2">
+                        {selectedProduct.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <Icon name="Check" size={14} className="text-primary" />
+                            </div>
+                            <span className="text-sm">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {selectedProduct.warranty && (
+                      <>
+                        <Separator />
+                        <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                          <Icon name="Shield" size={20} className="text-primary mt-0.5" />
+                          <div>
+                            <h4 className="font-semibold mb-1">Гарантия</h4>
+                            <p className="text-sm text-muted-foreground">{selectedProduct.warranty}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="specs" className="mt-4">
+                    {selectedProduct.specifications ? (
+                      <div className="space-y-3">
+                        {Object.entries(selectedProduct.specifications).map(([key, value]) => (
+                          <div key={key} className="flex justify-between items-start py-3 border-b last:border-0">
+                            <span className="font-medium text-sm">{key}</span>
+                            <span className="text-sm text-muted-foreground text-right max-w-xs">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Icon name="FileQuestion" size={48} className="mx-auto mb-2 opacity-50" />
+                        <p>Детальные характеристики уточняйте у менеджера</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="delivery" className="space-y-4 mt-4">
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                        <Icon name="Truck" size={20} className="text-primary mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold mb-1">Условия доставки</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedProduct.delivery || 'Доставка по Москве — 1 день, по России — 3-5 дней'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                        <Icon name="Package" size={20} className="text-primary mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold mb-1">Наличие на складе</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedProduct.inStock ? 'В наличии, готов к отправке' : 'Под заказ, срок поставки уточняйте'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                        <Icon name="CreditCard" size={20} className="text-primary mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold mb-1">Оплата</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Безналичный расчет для юридических лиц, НДС включен
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <Separator />
+
+                <div className="flex gap-3">
+                  <Button className="flex-1" size="lg">
+                    <Icon name="ShoppingCart" size={18} className="mr-2" />
+                    Добавить в заявку
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={() => scrollToSection('contacts')}>
+                    <Icon name="Phone" size={18} className="mr-2" />
+                    Консультация
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
