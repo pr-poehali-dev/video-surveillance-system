@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import Icon from '@/components/ui/icon';
+import QRCode from 'qrcode';
 
 interface CartItem {
   product: Product;
@@ -145,6 +146,9 @@ const Index = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [comparison, setComparison] = useState<ComparisonItem[]>([]);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'processing' | 'success'>('pending');
 
   const categories = ['all', 'Видеонаблюдение', 'Охранные системы', 'Контроль доступа'];
   const filteredProducts = selectedCategory === 'all' 
@@ -202,6 +206,43 @@ const Index = () => {
   const isInComparison = (productId: number) => {
     return comparison.some(item => item.product.id === productId);
   };
+
+  const generateQRCode = async () => {
+    const totalAmount = getTotalPrice();
+    const orderNumber = `ORD-${Date.now()}`;
+    const paymentData = `ST00012|Name=Security Systems|PersonalAcc=40702810900000012345|BankName=ПАО Сбербанк|BIC=044525225|CorrespAcc=30101810400000000225|Purpose=Оплата заказа ${orderNumber} на сумму ${totalAmount}руб|Sum=${totalAmount * 100}|PayeeINN=7707083893|KPP=773601001`;
+    
+    try {
+      const url = await QRCode.toDataURL(paymentData, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#1E293B',
+          light: '#FFFFFF'
+        }
+      });
+      setQrCodeUrl(url);
+    } catch (err) {
+      console.error('QR Code generation failed:', err);
+    }
+  };
+
+  const handlePayment = async () => {
+    setIsCartOpen(false);
+    setIsPaymentOpen(true);
+    await generateQRCode();
+    setPaymentStatus('processing');
+    
+    setTimeout(() => {
+      setPaymentStatus('success');
+    }, 3000);
+  };
+
+  useEffect(() => {
+    if (isPaymentOpen && qrCodeUrl === '') {
+      generateQRCode();
+    }
+  }, [isPaymentOpen]);
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -869,6 +910,15 @@ const Index = () => {
                   <Button 
                     className="w-full" 
                     size="lg"
+                    onClick={handlePayment}
+                  >
+                    <Icon name="QrCode" size={18} className="mr-2" />
+                    Оплатить по QR-коду
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="w-full" 
+                    size="lg"
                     onClick={() => {
                       setIsCartOpen(false);
                       scrollToSection('contacts');
@@ -878,7 +928,7 @@ const Index = () => {
                     Отправить заявку
                   </Button>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     className="w-full"
                     onClick={() => setCart([])}
                   >
@@ -1000,6 +1050,131 @@ const Index = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Оплата по QR-коду</DialogTitle>
+            <DialogDescription>
+              Отсканируйте QR-код в приложении вашего банка для оплаты заказа
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {paymentStatus === 'processing' && (
+              <div className="text-center space-y-4">
+                <div className="flex justify-center">
+                  <div className="animate-spin">
+                    <Icon name="Loader2" size={48} className="text-primary" />
+                  </div>
+                </div>
+                <p className="text-muted-foreground">Формируем QR-код для оплаты...</p>
+              </div>
+            )}
+
+            {paymentStatus === 'success' && qrCodeUrl && (
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-lg border-2 border-primary/20">
+                  <div className="flex justify-center mb-4">
+                    <img src={qrCodeUrl} alt="QR код для оплаты" className="w-64 h-64" />
+                  </div>
+                  
+                  <div className="text-center space-y-2">
+                    <div className="flex items-center justify-center gap-2 text-primary">
+                      <Icon name="QrCode" size={20} />
+                      <span className="font-semibold">СБП (Система Быстрых Платежей)</span>
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {getTotalPrice().toLocaleString('ru-RU')} ₽
+                    </div>
+                  </div>
+                </div>
+
+                <Card className="bg-muted/30 border-none">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-primary font-bold">1</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">Откройте приложение банка</p>
+                        <p className="text-sm text-muted-foreground">Сбербанк, Тинькофф, ВТБ или любой другой</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-primary font-bold">2</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">Найдите раздел оплаты по QR</p>
+                        <p className="text-sm text-muted-foreground">Обычно находится в разделе "Платежи"</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-primary font-bold">3</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">Отсканируйте QR-код</p>
+                        <p className="text-sm text-muted-foreground">Наведите камеру на код выше</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-primary font-bold">4</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">Подтвердите платеж</p>
+                        <p className="text-sm text-muted-foreground">Проверьте сумму и завершите оплату</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+                  <Icon name="Info" size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-blue-900">
+                    <p className="font-medium mb-1">Важная информация</p>
+                    <ul className="space-y-1 text-blue-800">
+                      <li>• После оплаты мы получим уведомление автоматически</li>
+                      <li>• Счет будет выставлен в течение 1 рабочего дня</li>
+                      <li>• Товар отправится после зачисления средств</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Button 
+                    className="w-full" 
+                    onClick={() => {
+                      setIsPaymentOpen(false);
+                      setCart([]);
+                      setPaymentStatus('pending');
+                    }}
+                  >
+                    <Icon name="CheckCircle" size={18} className="mr-2" />
+                    Оплатил, завершить
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => {
+                      setIsPaymentOpen(false);
+                      setPaymentStatus('pending');
+                      setIsCartOpen(true);
+                    }}
+                  >
+                    Вернуться в корзину
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
