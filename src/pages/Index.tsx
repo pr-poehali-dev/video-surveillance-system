@@ -7,7 +7,17 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import Icon from '@/components/ui/icon';
+
+interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+interface ComparisonItem {
+  product: Product;
+}
 
 interface Product {
   id: number;
@@ -131,6 +141,10 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [comparison, setComparison] = useState<ComparisonItem[]>([]);
+  const [isComparisonOpen, setIsComparisonOpen] = useState(false);
 
   const categories = ['all', 'Видеонаблюдение', 'Охранные системы', 'Контроль доступа'];
   const filteredProducts = selectedCategory === 'all' 
@@ -140,6 +154,53 @@ const Index = () => {
   const openProductDialog = (product: Product) => {
     setSelectedProduct(product);
     setIsDialogOpen(true);
+  };
+
+  const addToCart = (product: Product) => {
+    const existingItem = cart.find(item => item.product.id === product.id);
+    if (existingItem) {
+      setCart(cart.map(item => 
+        item.product.id === product.id 
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setCart([...cart, { product, quantity: 1 }]);
+    }
+  };
+
+  const removeFromCart = (productId: number) => {
+    setCart(cart.filter(item => item.product.id !== productId));
+  };
+
+  const updateQuantity = (productId: number, quantity: number) => {
+    if (quantity < 1) {
+      removeFromCart(productId);
+      return;
+    }
+    setCart(cart.map(item => 
+      item.product.id === productId ? { ...item, quantity } : item
+    ));
+  };
+
+  const getTotalPrice = () => {
+    return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+  };
+
+  const addToComparison = (product: Product) => {
+    if (comparison.find(item => item.product.id === product.id)) {
+      setComparison(comparison.filter(item => item.product.id !== product.id));
+    } else if (comparison.length < 4) {
+      setComparison([...comparison, { product }]);
+    }
+  };
+
+  const removeFromComparison = (productId: number) => {
+    setComparison(comparison.filter(item => item.product.id !== productId));
+  };
+
+  const isInComparison = (productId: number) => {
+    return comparison.some(item => item.product.id === productId);
   };
 
   const scrollToSection = (sectionId: string) => {
@@ -182,7 +243,35 @@ const Index = () => {
               Контакты
             </button>
           </nav>
-          <Button onClick={() => scrollToSection('contacts')}>Связаться</Button>
+          <div className="flex items-center gap-3">
+            {comparison.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="relative"
+                onClick={() => setIsComparisonOpen(true)}
+              >
+                <Icon name="GitCompare" size={20} />
+                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {comparison.length}
+                </Badge>
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="relative"
+              onClick={() => setIsCartOpen(true)}
+            >
+              <Icon name="ShoppingCart" size={20} />
+              {cart.length > 0 && (
+                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {cart.length}
+                </Badge>
+              )}
+            </Button>
+            <Button onClick={() => scrollToSection('contacts')}>Связаться</Button>
+          </div>
         </div>
       </header>
 
@@ -326,8 +415,16 @@ const Index = () => {
                         <span className="text-xs text-muted-foreground">за единицу</span>
                       </div>
                       <div className="flex gap-2">
-                        <Button className="flex-1">
-                          Заказать
+                        <Button className="flex-1" onClick={() => addToCart(product)}>
+                          <Icon name="ShoppingCart" size={16} className="mr-2" />
+                          В заявку
+                        </Button>
+                        <Button 
+                          variant={isInComparison(product.id) ? 'default' : 'outline'}
+                          size="icon"
+                          onClick={() => addToComparison(product)}
+                        >
+                          <Icon name="GitCompare" size={18} />
                         </Button>
                         <Button 
                           variant="outline" 
@@ -643,13 +740,31 @@ const Index = () => {
                 <Separator />
 
                 <div className="flex gap-3">
-                  <Button className="flex-1" size="lg">
+                  <Button 
+                    className="flex-1" 
+                    size="lg"
+                    onClick={() => {
+                      if (selectedProduct) {
+                        addToCart(selectedProduct);
+                        setIsDialogOpen(false);
+                        setIsCartOpen(true);
+                      }
+                    }}
+                  >
                     <Icon name="ShoppingCart" size={18} className="mr-2" />
                     Добавить в заявку
                   </Button>
-                  <Button variant="outline" size="lg" onClick={() => scrollToSection('contacts')}>
-                    <Icon name="Phone" size={18} className="mr-2" />
-                    Консультация
+                  <Button 
+                    variant={selectedProduct && isInComparison(selectedProduct.id) ? 'default' : 'outline'}
+                    size="lg"
+                    onClick={() => {
+                      if (selectedProduct) {
+                        addToComparison(selectedProduct);
+                      }
+                    }}
+                  >
+                    <Icon name="GitCompare" size={18} className="mr-2" />
+                    Сравнить
                   </Button>
                 </div>
               </div>
@@ -657,6 +772,234 @@ const Index = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Корзина заявок</SheetTitle>
+            <SheetDescription>
+              Выбранные товары для формирования коммерческого предложения
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-8 space-y-6">
+            {cart.length === 0 ? (
+              <div className="text-center py-12">
+                <Icon name="ShoppingCart" size={64} className="mx-auto mb-4 text-muted-foreground opacity-30" />
+                <p className="text-muted-foreground">Корзина пуста</p>
+                <p className="text-sm text-muted-foreground mt-2">Добавьте товары из каталога</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {cart.map((item) => (
+                    <Card key={item.product.id}>
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          <img 
+                            src={item.product.image} 
+                            alt={item.product.name}
+                            className="w-20 h-20 object-cover rounded"
+                          />
+                          <div className="flex-1 space-y-2">
+                            <h4 className="font-semibold text-sm">{item.product.name}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              {item.product.category}
+                            </Badge>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                >
+                                  <Icon name="Minus" size={14} />
+                                </Button>
+                                <span className="w-8 text-center font-medium">{item.quantity}</span>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  className="h-8 w-8"
+                                  onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                >
+                                  <Icon name="Plus" size={14} />
+                                </Button>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => removeFromCart(item.product.id)}
+                              >
+                                <Icon name="Trash2" size={16} />
+                              </Button>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-lg font-bold text-primary">
+                                {(item.product.price * item.quantity).toLocaleString('ru-RU')} ₽
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Всего товаров:</span>
+                    <span className="font-semibold">{cart.reduce((sum, item) => sum + item.quantity, 0)} шт</span>
+                  </div>
+                  <div className="flex justify-between items-center text-lg">
+                    <span className="font-semibold">Итого:</span>
+                    <span className="text-2xl font-bold text-primary">
+                      {getTotalPrice().toLocaleString('ru-RU')} ₽
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    * Итоговая стоимость может измениться после согласования с менеджером
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={() => {
+                      setIsCartOpen(false);
+                      scrollToSection('contacts');
+                    }}
+                  >
+                    <Icon name="Send" size={18} className="mr-2" />
+                    Отправить заявку
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setCart([])}
+                  >
+                    Очистить корзину
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={isComparisonOpen} onOpenChange={setIsComparisonOpen}>
+        <SheetContent className="w-full sm:max-w-4xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Сравнение товаров</SheetTitle>
+            <SheetDescription>
+              Сравните характеристики до 4 товаров одновременно
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-8">
+            {comparison.length === 0 ? (
+              <div className="text-center py-12">
+                <Icon name="GitCompare" size={64} className="mx-auto mb-4 text-muted-foreground opacity-30" />
+                <p className="text-muted-foreground">Нет товаров для сравнения</p>
+                <p className="text-sm text-muted-foreground mt-2">Добавьте товары из каталога</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {comparison.map((item) => (
+                    <Card key={item.product.id} className="relative">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8 z-10"
+                        onClick={() => removeFromComparison(item.product.id)}
+                      >
+                        <Icon name="X" size={16} />
+                      </Button>
+                      <CardContent className="p-4 space-y-3">
+                        <img 
+                          src={item.product.image} 
+                          alt={item.product.name}
+                          className="w-full h-32 object-cover rounded"
+                        />
+                        <div>
+                          <Badge variant="outline" className="text-xs mb-2">
+                            {item.product.category}
+                          </Badge>
+                          <h4 className="font-semibold text-sm mb-2">{item.product.name}</h4>
+                          <div className="text-xl font-bold text-primary mb-3">
+                            {item.product.price.toLocaleString('ru-RU')} ₽
+                          </div>
+                        </div>
+                        <Separator />
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-muted-foreground">Характеристики:</p>
+                          {item.product.specifications ? (
+                            <div className="space-y-1">
+                              {Object.entries(item.product.specifications).slice(0, 5).map(([key, value]) => (
+                                <div key={key} className="text-xs">
+                                  <span className="text-muted-foreground">{key}:</span>{' '}
+                                  <span className="font-medium">{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              {item.product.features.slice(0, 5).map((feature, idx) => (
+                                <div key={idx} className="text-xs flex items-start gap-1">
+                                  <Icon name="Check" size={12} className="text-primary mt-0.5 flex-shrink-0" />
+                                  <span>{feature}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <Button 
+                          className="w-full" 
+                          size="sm"
+                          onClick={() => {
+                            addToCart(item.product);
+                            setIsComparisonOpen(false);
+                            setIsCartOpen(true);
+                          }}
+                        >
+                          <Icon name="ShoppingCart" size={14} className="mr-2" />
+                          В заявку
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setComparison([])}
+                  >
+                    Очистить
+                  </Button>
+                  <Button 
+                    className="flex-1"
+                    onClick={() => {
+                      comparison.forEach(item => addToCart(item.product));
+                      setIsComparisonOpen(false);
+                      setIsCartOpen(true);
+                    }}
+                  >
+                    <Icon name="ShoppingCart" size={18} className="mr-2" />
+                    Добавить все в заявку
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
